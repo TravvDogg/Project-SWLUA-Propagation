@@ -1,0 +1,47 @@
+--Renderer 01
+instructions = {}
+collecting = true
+screenConnected = false
+
+function onTick()
+    if collecting then
+        packet1, packet2 = input.getNumber(1), input.getNumber(2)
+        unpackInstruction(packet1, packet2)
+        instructions[#instructions + 1] = {type, {table.unpack(params)}}
+    end
+end
+
+function onDraw()
+    if #instructions > 0 then
+        for i, instruction in pairs(instructions) do
+            if instruction[1] == 2 then --drawRect
+                screen.drawRectF(table.unpack(instruction[2]))
+            end
+            if instruction[1] == 3 then --setColor
+                screen.setColor(table.unpack(instruction[2]))
+            end
+        end
+    end
+end
+
+
+function unpackInstruction(packet1, packet2)
+    -- Extract type from the first 4 bits of the first packet
+    type = (packet1 >> 28) & 0xF
+
+    -- Extract parameters from both packets
+    params = {}
+    for i = 1, 3 do
+        table.insert(params, (packet1 >> ((3 - i) * 8)) & 0xFF)
+    end
+    for i = 4, 7 do
+        table.insert(params, (packet2 >> ((7 - i) * 8)) & 0xFF)
+    end
+    
+    
+    if type == 4 then --stop collecting data
+        collecting = false
+    end
+    
+    return type, params
+end
