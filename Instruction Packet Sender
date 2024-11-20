@@ -1,0 +1,43 @@
+--Instruction Packet Sender
+instructions = {
+    {1},
+    {3, {255, 255, 255}},
+    {2, {0, 0, 32, 32}},
+    {3, {0, 0, 255}},
+    {2, {0, 32, 32, 32}},
+    {3, {0, 255, 0}},
+    {2, {32, 0, 32, 32}},
+    {3, {255, 0, 0}},
+    {2, {32, 32, 32, 32}},
+    {4}
+}
+
+dataSize = #instructions
+packetNum = 1
+
+function onTick()
+    if packetNum <= #instructions then
+        packInstruction(instructions[packetNum])
+        packetNum = packetNum + 1
+    end
+end
+
+function packInstruction(params)
+    packet1 = params[1] << 28  -- Instruction type (4 bits in the first float)
+    packet2 = 0           -- Second packet starts empty
+
+    if not (params[2] == nil) then
+    
+        -- Fill the first packet with as many parameters as fit
+        for i = 1, math.min(3, #params[2]) do
+            packet1 = packet1 | (params[2][i] << ((3 - i) * 8)) -- Fit up to 3 params (8 bits each)
+        end
+    
+        -- Fill the second packet with the remaining parameters
+        for i = 4, #params[2] do
+            packet2 = packet2 | (params[2][i] << ((7 - i) * 8)) -- Fit remaining params (up to 4)
+        end
+    end
+    output.setNumber(1, packet1)
+    output.setNumber(2, packet2)
+end
